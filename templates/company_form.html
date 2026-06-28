@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel narrow">
+  <h1>Профиль компании</h1>
+  <form method="post" enctype="multipart/form-data" class="form">
+    <div class="company-logo-preview">
+      {% if company and company.logo %}
+        <img src="{{ url_for('uploaded_file', filename=company.logo) }}" alt="{{ company.name }}">
+      {% else %}
+        <span>{{ company.name[:1] if company else "J" }}</span>
+      {% endif %}
+    </div>
+
+    <label>Логотип компании
+      <input name="logo" type="file" accept=".png,.jpg,.jpeg,.webp,.gif">
+    </label>
+    <label>Название
+      <input name="name" required value="{{ company.name if company else '' }}" placeholder="Введите название компании">
+    </label>
+    <label>ИНН
+      <input name="inn" required value="{{ company.inn if company else '' }}" placeholder="Введите ИНН">
+    </label>
+    <label>Сфера деятельности
+      <input name="industry" list="industry-options" required value="{{ company.industry if company else '' }}" placeholder="Выберите или введите сферу">
+    </label>
+    <label>Размер компании
+      <input name="company_size" list="company-size-options" value="{{ company.company_size if company else '' }}" placeholder="Например: 51-200 сотрудников">
+    </label>
+    <label>Город
+      <input name="city" list="city-options" required value="{{ company.city if company else '' }}" placeholder="Выберите или введите город">
+    </label>
+    <label>Контакты
+      <input name="contacts" list="contact-options" required value="{{ company.contacts if company else '' }}" placeholder="Телефон, email или сайт">
+    </label>
+    <label>Описание компании
+      <textarea name="description" placeholder="Коротко расскажите о компании, команде и условиях работы">{{ company.description if company else '' }}</textarea>
+    </label>
+    <p class="form-hint">Публичный профиль компании повышает доверие кандидатов и делает вакансии заметнее.</p>
+    <button class="button" type="submit">Сохранить</button>
+  </form>
+</section>
+
+{% include "partials/form_datalists.html" %}
+{% endblock %}

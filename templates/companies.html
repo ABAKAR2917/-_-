@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section-head">
+  <div>
+    <h1>Компании</h1>
+    <p class="lead">Проверенные работодатели JobSearch и их открытые вакансии.</p>
+  </div>
+  <a class="button ghost" href="{{ url_for('vacancies') }}">Смотреть вакансии</a>
+</div>
+
+<section class="company-catalog">
+  {% for company in companies %}
+    <a class="company-card" href="{{ url_for('company_public', company_id=company.id) }}">
+      <div class="company-avatar{% if not company.logo %} logo-missing{% endif %}">
+        {% if company.logo %}
+          <img src="{{ url_for('uploaded_file', filename=company.logo) }}" alt="{{ company.name }}">
+        {% else %}
+          {{ company.name[:1] }}
+        {% endif %}
+      </div>
+      <div>
+        <h2>{{ company.name }}</h2>
+        <p>{{ company.city }}{% if company.industry %} · {{ company.industry }}{% endif %}</p>
+        {% if company.company_size %}
+          <span class="muted">{{ company.company_size }}</span>
+        {% endif %}
+      </div>
+      <div class="company-card-meta">
+        <strong>{{ company.vacancy_count }} вакансий</strong>
+        <span class="badge {{ 'ok' if company.is_verified else '' }}">{{ "проверена" if company.is_verified else "на проверке" }}</span>
+      </div>
+    </a>
+  {% else %}
+    <section class="panel">
+      <p class="muted">Компании появятся после проверки работодателей администратором.</p>
+    </section>
+  {% endfor %}
+</section>
+{% endblock %}

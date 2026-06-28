@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section-head">
+  <h1>Избранное</h1>
+  {% if kind == "vacancy" %}
+    <a class="button ghost" href="{{ url_for('vacancies') }}">Найти вакансии</a>
+  {% else %}
+    <a class="button ghost" href="{{ url_for('resumes') }}">Найти резюме</a>
+  {% endif %}
+</div>
+
+{% if kind == "vacancy" %}
+  <div class="grid">
+    {% for vacancy in items %}
+      <article class="card job-card">
+        <div class="company-bg">
+          {% if vacancy.company_logo %}
+            <img src="{{ url_for('uploaded_file', filename=vacancy.company_logo) }}" alt="{{ vacancy.company_name }}">
+          {% else %}
+            <span>{{ vacancy.company_name[:1] }}</span>
+          {% endif %}
+        </div>
+        <h3>{{ vacancy.title }}</h3>
+        <p>{{ vacancy.company_name }} · {{ vacancy.city }}</p>
+        <p class="muted">от {{ "%.0f"|format(vacancy.salary) }} ₽ · {{ vacancy.employment_type }}</p>
+        <div class="actions">
+          <a class="button small" href="{{ url_for('vacancy_detail', vacancy_id=vacancy.id) }}">Подробнее</a>
+          <form method="post" action="{{ url_for('toggle_favorite', item_type='vacancy', item_id=vacancy.id) }}">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button class="button small ghost" type="submit">Убрать</button>
+          </form>
+        </div>
+      </article>
+    {% else %}
+      <p class="muted">Вы пока не сохранили вакансии.</p>
+    {% endfor %}
+  </div>
+{% else %}
+  <section class="panel">
+    <table>
+      <tr><th>Соискатель</th><th>Город</th><th>Опыт</th><th>Навыки</th><th></th></tr>
+      {% for resume in items %}
+        <tr>
+          <td>{{ resume.full_name }}<br><span class="muted">{{ resume.email }}</span></td>
+          <td>{{ resume.city }}</td>
+          <td>{{ resume.experience_years }}</td>
+          <td>{{ resume.skills }}</td>
+          <td>
+            <div class="actions">
+              <a class="button small" href="{{ url_for('resume_detail', resume_id=resume.id) }}">Открыть</a>
+              <form method="post" action="{{ url_for('toggle_favorite', item_type='resume', item_id=resume.id) }}">
+                <input type="hidden" name="next" value="{{ request.path }}">
+                <button class="button small ghost" type="submit">Убрать</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="5">Вы пока не сохранили резюме.</td></tr>
+      {% endfor %}
+    </table>
+  </section>
+{% endif %}
+{% endblock %}

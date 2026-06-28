@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section-head">
+  <h1>Персональный подбор</h1>
+</div>
+
+<section class="panel">
+  <div class="recommendation-intro">
+    <div>
+      <p class="eyebrow">Результаты по вашему резюме</p>
+      <h2>Сначала показываем вакансии из вашего города, затем остальные</h2>
+      <p class="muted">Список отсортирован по вашему резюме, чтобы быстрее показать наиболее подходящие варианты.</p>
+    </div>
+  </div>
+
+  <table>
+    <tr><th>Вакансия</th><th>Компания</th><th>Город</th><th>Статус</th><th></th></tr>
+    {% for item in results %}
+      <tr>
+        <td>
+          {{ item.vacancy.title }}<br>
+          <span class="muted">{{ item.vacancy.employment_type }} · от {{ "%.0f"|format(item.vacancy.salary) }} ₽</span>
+        </td>
+        <td>{{ item.vacancy.company_name }}</td>
+        <td><span class="badge {{ 'ok' if item.city_match else '' }}">{{ "тот же город" if item.city_match else item.vacancy.city }}</span></td>
+        <td><span class="badge {{ 'ok' if item.recommended else '' }}">{{ "рекомендуется" if item.recommended else "можно рассмотреть" }}</span></td>
+        <td><a class="button small" href="{{ url_for('vacancy_detail', vacancy_id=item.vacancy.id) }}">Открыть</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">Пока нет активных вакансий для подбора.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+{% endblock %}

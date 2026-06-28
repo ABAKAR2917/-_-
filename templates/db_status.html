@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel narrow">
+  <p class="eyebrow">Служебная информация</p>
+  <h1>База данных</h1>
+  <table>
+    <tr><th>Параметр</th><th>Значение</th></tr>
+    <tr><td>Движок</td><td>{{ engine }}</td></tr>
+    <tr><td>База</td><td>{{ database }}</td></tr>
+    <tr><td>Пользователи</td><td>{{ user_count }}</td></tr>
+    <tr><td>Вакансии</td><td>{{ vacancy_count }}</td></tr>
+    <tr><td>Резюме</td><td>{{ resume_count }}</td></tr>
+  </table>
+</section>
+{% endblock %}

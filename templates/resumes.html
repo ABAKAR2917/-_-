@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section-head">
+  <h1>База резюме</h1>
+</div>
+<form method="get" class="filters">
+  <input name="skills" placeholder="Навык" value="{{ query }}">
+  <button class="button small">Найти</button>
+</form>
+<section class="panel">
+  <table>
+    <tr><th>Соискатель</th><th>Город</th><th>Опыт</th><th>Навыки</th><th>Обновлено</th></tr>
+    {% for resume in resumes %}
+      <tr>
+        <td><a href="{{ url_for('resume_detail', resume_id=resume.id) }}">{{ resume.full_name }}</a><br><span class="muted">{{ resume.email }}</span></td>
+        <td>{{ resume.city }}</td>
+        <td>{{ resume.experience_years }}</td>
+        <td>{{ resume.skills }}</td>
+        <td>{{ resume.updated_at|date_only }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">Резюме не найдены.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+{% endblock %}

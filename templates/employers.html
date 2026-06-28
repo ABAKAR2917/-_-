@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="employer-hero panel">
+  <div>
+    <p class="eyebrow">Для работодателей</p>
+    <h1>Найдите сотрудников через JobSearch</h1>
+    <p class="lead">Создайте профиль компании, размещайте вакансии, просматривайте резюме и отслеживайте отклики кандидатов в одном кабинете.</p>
+    <div class="actions">
+      {% if not current_user %}
+        <a class="button" href="{{ url_for('register') }}">Создать аккаунт работодателя</a>
+        <a class="button ghost" href="{{ url_for('login') }}">Войти</a>
+      {% elif current_user.role == 'employer' %}
+        <a class="button" href="{{ url_for('dashboard') }}">Открыть кабинет компании</a>
+        <a class="button ghost" href="{{ url_for('resumes') }}">Смотреть резюме</a>
+      {% else %}
+        <a class="button" href="{{ url_for('register') }}">Создать аккаунт работодателя</a>
+        <a class="button ghost" href="{{ url_for('vacancies') }}">Вернуться к вакансиям</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="feature-strip">
+  <div><strong>База резюме</strong><span>Ищите кандидатов по навыкам, городу и профессиональному опыту.</span></div>
+  <div><strong>Профиль компании</strong><span>Добавляйте данные компании и логотип для доверия соискателей.</span></div>
+  <div><strong>Управление откликами</strong><span>Меняйте статусы заявок и сохраняйте прозрачную историю подбора.</span></div>
+</section>
+{% endblock %}

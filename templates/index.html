@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <div class="audience-switch">
+      <a class="active" href="{{ url_for('vacancies') }}">Ищу работу</a>
+      <a href="{{ url_for('employers') }}">Ищу сотрудника</a>
+    </div>
+    <p class="eyebrow">Работа и сотрудники в одном сервисе</p>
+    <h1>Найдите работу или сотрудников</h1>
+    <p>JobSearch помогает соискателям быстрее находить подходящие вакансии, а работодателям — работать с актуальными резюме и откликами.</p>
+    <form class="hero-search" method="get" action="{{ url_for('vacancies') }}">
+      <input name="query" placeholder="Профессия, должность или компания">
+      <input name="city" list="city-options" placeholder="Город">
+      <button class="button" type="submit">Найти</button>
+    </form>
+    <div class="actions">
+      {% if not current_user %}
+        <a class="button" href="{{ url_for('register') }}">Создать резюме</a>
+      {% endif %}
+      <a class="button ghost" href="{{ url_for('employers') }}">Разместить вакансию</a>
+    </div>
+  </div>
+</section>
+
+<section class="feature-strip">
+  <div><strong>Для соискателей</strong><span>Создавайте резюме, откликайтесь и получайте подходящие вакансии.</span></div>
+  <div><strong>Для работодателей</strong><span>Публикуйте вакансии и просматривайте актуальную базу резюме.</span></div>
+  <div><strong>Умный подбор</strong><span>Рекомендации учитывают навыки, опыт и зарплатные ожидания.</span></div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>Работа в компаниях</h2>
+    <a href="{{ url_for('companies') }}">Все компании</a>
+  </div>
+  <div class="company-showcase">
+    <article class="pro-card">
+      <span>PRO</span>
+      <h3>Ускорьте поиск с JobSearch</h3>
+      <p>Подбор вакансий, статусы откликов и рекомендации в одном кабинете.</p>
+      <a class="button small" href="{{ url_for('register') }}">Попробовать</a>
+    </article>
+    {% for company in companies %}
+      <a class="company-tile" href="{{ url_for('company_public', company_id=company.id) }}">
+        <div class="company-avatar{% if not company.logo %} logo-missing{% endif %}">
+          {% if company.logo %}
+            <img src="{{ url_for('uploaded_file', filename=company.logo) }}" alt="{{ company.name }}">
+          {% else %}
+            {{ company.name[:1] }}
+          {% endif %}
+        </div>
+        <div>
+          <strong>{{ company.name }}</strong>
+          <span>{{ company.vacancy_count }} вакансий</span>
+        </div>
+      </a>
+    {% else %}
+      <article class="company-tile">
+        <div class="company-avatar">J</div>
+        <div>
+          <strong>JobSearch</strong>
+          <span>компании появятся после добавления вакансий</span>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>Популярное</h2>
+    <a href="{{ url_for('vacancies') }}">Открыть поиск</a>
+  </div>
+  <div class="popular-grid">
+    <a href="{{ url_for('vacancies') }}?employment_type=Полная занятость">Полная занятость</a>
+    <a href="{{ url_for('vacancies') }}?employment_type=Частичная занятость">Частичная занятость</a>
+    <a href="{{ url_for('vacancies') }}?city=Москва">Москва</a>
+    <a href="{{ url_for('vacancies') }}?city=Оренбург">Оренбург</a>
+    <a href="{{ url_for('vacancies') }}?city=Санкт-Петербург">Санкт-Петербург</a>
+    <a href="{{ url_for('vacancies') }}">Все вакансии</a>
+  </div>
+</section>
+
+<section>
+  <div class="section-head">
+    <h2>Новые вакансии</h2>
+    <a href="{{ url_for('vacancies') }}">Все вакансии</a>
+  </div>
+  <div class="grid">
+    {% for vacancy in vacancies %}
+      <article class="card job-card">
+        <div class="company-bg">
+          {% if vacancy.company_logo %}
+            <img src="{{ url_for('uploaded_file', filename=vacancy.company_logo) }}" alt="{{ vacancy.company_name }}">
+          {% else %}
+            <span>{{ vacancy.company_name[:1] }}</span>
+          {% endif %}
+        </div>
+        <h3>{{ vacancy.title }}</h3>
+        <p>{{ vacancy.company_name }} · {{ vacancy.city }}</p>
+        <p class="muted">{{ vacancy.employment_type }} · от {{ "%.0f"|format(vacancy.salary) }} ₽</p>
+        <a class="button small" href="{{ url_for('vacancy_detail', vacancy_id=vacancy.id) }}">Подробнее</a>
+      </article>
+    {% else %}
+      <p class="muted">Пока нет активных вакансий.</p>
+    {% endfor %}
+  </div>
+</section>
+
+{% include "partials/form_datalists.html" %}
+{% endblock %}

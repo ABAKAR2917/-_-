@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title or "JobSearch" }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="brand-mark">J</span>
+      <span>JobSearch</span>
+    </a>
+    <nav>
+      <a href="{{ url_for('vacancies') }}">Вакансии</a>
+      {% if current_user %}
+        <a href="{{ url_for('favorites') }}">Избранное</a>
+        <a href="{{ url_for('dashboard') }}">Кабинет</a>
+        <a href="{{ url_for('notifications') }}">Уведомления{% if unread_notifications %} <span class="nav-count">{{ unread_notifications }}</span>{% endif %}</a>
+        {% if current_user.role == 'applicant' %}
+          <a href="{{ url_for('recommendations') }}">Подбор</a>
+        {% elif current_user.role == 'employer' %}
+          <a href="{{ url_for('resumes') }}">Резюме</a>
+        {% endif %}
+        <a href="{{ url_for('logout') }}">Выход</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Вход</a>
+        <a class="button small" href="{{ url_for('register') }}">Регистрация</a>
+      {% endif %}
+    </nav>
+  </header>
+
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="messages">
+          {% for category, message in messages %}
+            <div class="message {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a class="brand" href="{{ url_for('index') }}">
+            <span class="brand-mark">J</span>
+            <span>JobSearch</span>
+          </a>
+          <p>Платформа для поиска работы, публикации вакансий и интеллектуального подбора кандидатов в России.</p>
+          <a class="footer-contact" href="mailto:support@jobsearch.ru">support@jobsearch.ru</a>
+        </div>
+
+        <div class="footer-col">
+          <h3>Соискателям</h3>
+          <a href="{{ url_for('vacancies') }}">Поиск вакансий</a>
+          <a href="{{ url_for('register') }}">Создать резюме</a>
+          <a href="{{ url_for('recommendations') }}">Персональный подбор</a>
+          <a href="{{ url_for('notifications') }}">Статусы откликов</a>
+          <a href="{{ url_for('career') }}">Советы соискателям</a>
+          <a href="{{ url_for('security') }}">Безопасность</a>
+        </div>
+
+        <div class="footer-col">
+          <h3>Работодателям</h3>
+          <a href="{{ url_for('employers') }}">Разместить вакансию</a>
+          <a href="{{ url_for('resumes') if current_user and current_user.role == 'employer' else url_for('employers') }}">Поиск по резюме</a>
+          <a href="{{ url_for('dashboard') if current_user and current_user.role == 'employer' else url_for('employers') }}">Кабинет компании</a>
+          <a href="{{ url_for('market') }}">Статистика рынка</a>
+        </div>
+
+        <div class="footer-col">
+          <h3>Связь</h3>
+          <a href="{{ url_for('index') }}">О платформе</a>
+          <a href="{{ url_for('career') }}">Карьера и статьи</a>
+          <a href="{{ url_for('market') }}">Зарплаты и рынок</a>
+          <span>Россия</span>
+          <div class="footer-socials" aria-label="Социальные сети">
+            <a href="https://t.me/jobsearch" target="_blank" rel="noreferrer" aria-label="Telegram JobSearch">
+              <img src="{{ url_for('static', filename='images/social-telegram.jpg') }}" alt="Telegram">
+            </a>
+            <a href="https://vk.com/jobsearch" target="_blank" rel="noreferrer" aria-label="VK JobSearch">
+              <img src="{{ url_for('static', filename='images/social-vk.jpg') }}" alt="VK">
+            </a>
+            <a href="https://wa.me/70000000000" target="_blank" rel="noreferrer" aria-label="WhatsApp JobSearch">
+              <img src="{{ url_for('static', filename='images/social-whatsapp.jpg') }}" alt="WhatsApp">
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <span class="footer-language"><img src="{{ url_for('static', filename='images/icon-language.svg') }}" alt=""> Русский</span>
+        <span>© 2026 JobSearch. Все права защищены.</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

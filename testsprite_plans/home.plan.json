@@ -1,0 +1,16 @@
+{
+  "projectId": "b641f761-e595-471a-a402-2e25e235965e",
+  "type": "frontend",
+  "name": "Homepage shows job search and company sections",
+  "description": "A visitor opens the JobSearch homepage and sees the hero search, employer switch, company section, popular section, vacancies and footer.",
+  "priority": "p0",
+  "planSteps": [
+    { "type": "action", "description": "Navigate to the homepage" },
+    { "type": "assertion", "description": "Verify the JobSearch brand is visible" },
+    { "type": "assertion", "description": "Verify the hero search form is visible with city and employment type fields" },
+    { "type": "assertion", "description": "Verify the buttons Ищу работу and Ищу сотрудника are visible" },
+    { "type": "assertion", "description": "Verify the section Работа в компаниях is visible" },
+    { "type": "assertion", "description": "Verify the section Новые вакансии is visible" },
+    { "type": "assertion", "description": "Verify the footer contains support@jobsearch.ru and © 2026 JobSearch" }
+  ]
+}

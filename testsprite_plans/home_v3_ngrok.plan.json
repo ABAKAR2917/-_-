@@ -1,0 +1,16 @@
+{
+  "projectId": "b641f761-e595-471a-a402-2e25e235965e",
+  "type": "frontend",
+  "name": "Homepage renders through ngrok tunnel",
+  "description": "A visitor opens the JobSearch homepage through an ngrok public URL, passes the ngrok browser warning if it appears, and verifies the main homepage sections.",
+  "priority": "p0",
+  "planSteps": [
+    { "type": "action", "description": "Navigate to the homepage" },
+    { "type": "action", "description": "If an ngrok browser warning page appears, click the button or link to continue to the site" },
+    { "type": "assertion", "description": "Verify the JobSearch homepage is loaded and the JobSearch brand is visible" },
+    { "type": "assertion", "description": "Verify a job search form with city and employment type fields is visible" },
+    { "type": "assertion", "description": "Verify the page has controls for job seeker and employer modes" },
+    { "type": "action", "description": "Scroll down through the homepage content" },
+    { "type": "assertion", "description": "Verify the homepage shows company, popular, vacancy, or footer content below the hero area" }
+  ]
+}

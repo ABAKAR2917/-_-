@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section-head">
+  <h1>Кабинет работодателя</h1>
+  <div class="actions">
+    <a class="button" href="{{ url_for('company') }}">Профиль компании</a>
+    <a class="button ghost" href="{{ url_for('vacancy_form') }}">Новая вакансия</a>
+    <a class="button ghost" href="{{ url_for('favorites') }}">Избранное</a>
+  </div>
+</div>
+
+<section class="stats-row">
+  <div class="stat"><strong>{{ employer_stats.vacancies }}</strong><span>вакансий</span></div>
+  <div class="stat"><strong>{{ employer_stats.views }}</strong><span>просмотров</span></div>
+  <div class="stat"><strong>{{ employer_stats.applications }}</strong><span>откликов</span></div>
+  <div class="stat"><strong>{{ employer_stats.invited }}</strong><span>приглашений</span></div>
+</section>
+
+<section class="panel">
+  <h2>Компания</h2>
+  {% if company %}
+    <p><strong>{{ company.name }}</strong>, {{ company.city }} · ИНН {{ company.inn }}</p>
+    <p class="muted">
+      {{ "Профиль подтверждён" if company.is_verified else "Профиль на проверке. Вакансии можно публиковать сразу." }}
+    </p>
+  {% else %}
+    <p class="muted">Профиль компании не заполнен.</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Подходящие кандидаты</h2>
+  <table>
+    <tr><th>Кандидат</th><th>Под вакансию</th><th>Навыки</th><th>Статус</th><th></th></tr>
+    {% for item in recommended_candidates %}
+      <tr>
+        <td>{{ item.resume.full_name }}<br><span class="muted">{{ item.resume.city }}, опыт {{ item.resume.experience_years }} г.</span></td>
+        <td>{{ item.vacancy.title }}</td>
+        <td>{{ item.resume.skills }}</td>
+        <td><span class="badge ok">рекомендуется</span></td>
+        <td><a class="button small" href="{{ url_for('resume_detail', resume_id=item.resume.id) }}">Открыть</a></td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">Подходящих кандидатов пока нет.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+
+<section class="panel">
+  <h2>Вакансии</h2>
+  <table>
+    <tr><th>Должность</th><th>Город</th><th>Статус</th><th>Просмотры</th><th>Отклики</th><th></th></tr>
+    {% for vacancy in vacancies %}
+      <tr>
+        <td>{{ vacancy.title }}</td>
+        <td>{{ vacancy.city }}</td>
+        <td>{{ "активна" if vacancy.is_active else "неактивна" }}{% if vacancy.needs_attention %}, проверка{% endif %}</td>
+        <td>{{ vacancy.view_count or 0 }}</td>
+        <td>{{ vacancy.application_count or 0 }}</td>
+        <td>
+          <form method="post" action="{{ url_for('confirm_vacancy', vacancy_id=vacancy.id) }}">
+            <button class="link-button">Подтвердить</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6">Вакансий пока нет.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+
+<section class="panel">
+  <h2>Отклики</h2>
+  <table>
+    <tr><th>Кандидат</th><th>Вакансия</th><th>Навыки</th><th>Статус</th><th>Действие</th></tr>
+    {% for item in responses %}
+      <tr>
+        <td>{{ item.full_name }}<br><span class="muted">{{ item.city }}, опыт {{ item.experience_years }}</span></td>
+        <td>{{ item.title }}</td>
+        <td>{{ item.skills }}</td>
+        <td><span class="badge">{{ status_labels.get(item.status, item.status) }}</span></td>
+        <td>
+          <a class="button small ghost" href="{{ url_for('vacancy_messages', vacancy_id=item.vacancy_id, participant=item.applicant_id) }}">Сообщения</a>
+          <form method="post" action="{{ url_for('update_application_status', application_id=item.id) }}" class="inline-form">
+            <select name="status">
+              <option value="viewed">Просмотрен</option>
+              <option value="invited">Пригласить</option>
+              <option value="rejected">Отказать</option>
+            </select>
+            <input name="reason" placeholder="Комментарий">
+            <button class="button small">OK</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">Откликов пока нет.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+{% endblock %}

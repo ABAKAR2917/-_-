@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+*.db
+*.log
+.env
+.env.*
+.venv/
+venv/
+env/
+node_modules/
+server-out.log
+server-err.log
+uploads/*
+!uploads/.gitkeep
+.testsprite/runs/
+others/
+.claude/
+Interactive Product Card/
+Login Form Animation/
+/images/
+*.docx

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Панель администратора</h1>
+<div class="actions">
+  <a class="button ghost" href="{{ url_for('admin_db_status') }}">База данных</a>
+</div>
+
+<section class="stats-row">
+  <div class="stat"><strong>{{ stats.users }}</strong><span>пользователей</span></div>
+  <div class="stat"><strong>{{ stats.companies }}</strong><span>компаний</span></div>
+  <div class="stat"><strong>{{ stats.active_vacancies }}</strong><span>активных вакансий</span></div>
+  <div class="stat"><strong>{{ stats.active_resumes }}</strong><span>активных резюме</span></div>
+</section>
+
+<section class="panel">
+  <h2>Модерация компаний</h2>
+  <table>
+    <tr><th>Компания</th><th>ИНН</th><th>Email</th><th>Статус</th><th></th></tr>
+    {% for company in companies %}
+      <tr>
+        <td>{{ company.name }}</td>
+        <td>{{ company.inn }}</td>
+        <td>{{ company.email }}</td>
+        <td>{{ "подтверждена" if company.is_verified else "ожидает" }}</td>
+        <td>
+          {% if not company.is_verified %}
+            <form method="post" action="{{ url_for('verify_company', company_id=company.id) }}">
+              <button class="button small">Подтвердить</button>
+            </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">Компаний пока нет.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+
+<section class="panel">
+  <h2>Контроль резюме</h2>
+  <table>
+    <tr><th>Соискатель</th><th>Город</th><th>Должность</th><th>Навыки</th><th>Статус</th><th></th></tr>
+    {% for resume in resumes %}
+      <tr>
+        <td><a href="{{ url_for('resume_detail', resume_id=resume.id) }}">{{ resume.full_name }}</a><br><span class="muted">{{ resume.email }}</span></td>
+        <td>{{ resume.city }}</td>
+        <td>{{ resume.desired_position }}<br><span class="muted">опыт {{ resume.experience_years }} г.</span></td>
+        <td>{{ resume.skills }}</td>
+        <td>{{ "активно" if resume.is_active else "скрыто" }}<br><span class="muted">{{ resume.updated_at|date_only }}</span></td>
+        <td>
+          <form method="post" action="{{ url_for('admin_resume_status', resume_id=resume.id) }}">
+            {% if resume.is_active %}
+              <input type="hidden" name="is_active" value="0">
+              <button class="button small ghost">Скрыть</button>
+            {% else %}
+              <input type="hidden" name="is_active" value="1">
+              <button class="button small">Активировать</button>
+            {% endif %}
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6">Резюме пока нет.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+
+<section class="panel">
+  <h2>Все вакансии</h2>
+  <table>
+    <tr><th>Вакансия</th><th>Компания</th><th>Город</th><th>Зарплата</th><th>Статус</th><th></th></tr>
+    {% for vacancy in all_vacancies %}
+      <tr>
+        <td>{{ vacancy.title }}<br><span class="muted">{{ vacancy.employment_type }}</span></td>
+        <td>{{ vacancy.company_name }}</td>
+        <td>{{ vacancy.city }}</td>
+        <td>{{ "%.0f"|format(vacancy.salary) }} ₽</td>
+        <td>
+          {{ "активна" if vacancy.is_active else "скрыта" }}
+          {% if vacancy.needs_attention %}<br><span class="muted">требует проверки</span>{% endif %}
+        </td>
+        <td>
+          <form method="post" action="{{ url_for('admin_vacancy_status', vacancy_id=vacancy.id) }}">
+            {% if vacancy.is_active %}
+              <input type="hidden" name="is_active" value="0">
+              <button class="button small ghost">Скрыть</button>
+            {% else %}
+              <input type="hidden" name="is_active" value="1">
+              <button class="button small">Активировать</button>
+            {% endif %}
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6">Вакансий пока нет.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+
+<section class="panel">
+  <h2>Проблемные вакансии</h2>
+  <table>
+    <tr><th>Вакансия</th><th>Компания</th><th>Состояние</th><th></th></tr>
+    {% for vacancy in flagged %}
+      <tr>
+        <td>{{ vacancy.title }}</td>
+        <td>{{ vacancy.company_name }}</td>
+        <td>{{ "неактивна" if not vacancy.is_active else "требует внимания" }}</td>
+        <td>
+          <form method="post" action="{{ url_for('activate_vacancy', vacancy_id=vacancy.id) }}">
+            <button class="button small">Активировать</button>
+          </form>
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4">Проблемных вакансий нет.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+{% endblock %}

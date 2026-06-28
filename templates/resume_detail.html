@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <p class="eyebrow">Карточка соискателя</p>
+  <div class="section-head">
+    <div>
+      <h1>{{ resume.full_name }}</h1>
+      <p class="lead">{{ resume.desired_position }} · {{ resume.city }}</p>
+      {% if resume.availability_status %}<span class="badge ok">{{ resume.availability_status }}</span>{% endif %}
+    </div>
+    {% if current_user and current_user.role == 'employer' %}
+      <form method="post" action="{{ url_for('toggle_favorite', item_type='resume', item_id=resume.id) }}">
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <button class="button ghost" type="submit">{{ "Убрать из избранного" if is_favorite else "В избранное" }}</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h2>Профессиональные данные</h2>
+      <table>
+        <tr><th>Специальность</th><td>{{ resume.specialty }}</td></tr>
+        <tr><th>Образование</th><td>{{ resume.education_level }}</td></tr>
+        <tr><th>Опыт</th><td>{{ resume.experience_years }} г.</td></tr>
+        <tr><th>Желаемая зарплата</th><td>{{ "%.0f"|format(resume.desired_salary) }} ₽</td></tr>
+        <tr><th>Навыки</th><td>{{ resume.skills }}</td></tr>
+        <tr><th>Уровень навыков</th><td>{{ resume.skills_level }}</td></tr>
+        <tr><th>Языки</th><td>{{ resume.languages or "Не указаны" }}</td></tr>
+        <tr><th>Сертификаты</th><td>{{ resume.certificates or "Не указаны" }}</td></tr>
+        <tr><th>Портфолио</th><td>{{ resume.portfolio_links or "Не указано" }}</td></tr>
+      </table>
+    </div>
+    <div>
+      <h2>Контакты и статус</h2>
+      <table>
+        <tr><th>Email</th><td>{{ resume.email }}</td></tr>
+        <tr><th>Телефон</th><td>{{ resume.phone }}</td></tr>
+        <tr><th>Пол</th><td>{{ resume.gender or "не указан" }}</td></tr>
+        <tr><th>Дата рождения</th><td>{{ resume.birth_date|date_only }}</td></tr>
+        <tr><th>Обновлено</th><td>{{ resume.updated_at|date_only }}</td></tr>
+        <tr><th>Статус</th><td>{{ "активно" if resume.is_active else "скрыто" }}</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="two-col">
+  <div class="panel">
+    <h2>Опыт работы</h2>
+    <p>{{ resume.work_experience or "Опыт работы не заполнен." }}</p>
+  </div>
+  <div class="panel">
+    <h2>История образования</h2>
+    <p>{{ resume.education_history or "История образования не заполнена." }}</p>
+  </div>
+</section>
+
+{% if current_user and current_user.role == 'employer' %}
+<section class="panel">
+  <h2>Внутренние заметки работодателя</h2>
+  <form method="post" action="{{ url_for('add_resume_note', resume_id=resume.id) }}" class="inline-form">
+    <input name="note" placeholder="Например: пригласить на интервью после проверки портфолио">
+    <button class="button small">Сохранить</button>
+  </form>
+  <table>
+    <tr><th>Заметка</th><th>Дата</th></tr>
+    {% for note in notes %}
+      <tr>
+        <td>{{ note.note }}</td>
+        <td>{{ note.created_at|date_only }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="2">Заметок пока нет.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+{% endif %}
+{% endblock %}

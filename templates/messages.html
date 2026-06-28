@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section-head">
+  <div>
+    <h1>Сообщения</h1>
+    <p class="lead">{{ vacancy.title }} · {{ vacancy.company_name }}</p>
+  </div>
+  <a class="button ghost" href="{{ url_for('vacancy_detail', vacancy_id=vacancy.id) }}">Открыть вакансию</a>
+</div>
+
+<section class="panel">
+  {% if participants|length > 1 %}
+    <div class="chat-tabs">
+      {% for user in participants %}
+        <a class="chat-tab{% if user.id == selected_participant_id %} active{% endif %}" href="{{ url_for('vacancy_messages', vacancy_id=vacancy.id, participant=user.id) }}">
+          {{ user.full_name }}
+        </a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="message-list">
+    {% for item in messages %}
+      <div class="message-item{% if item.sender_id == current_user.id %} own{% endif %}">
+        <strong>{{ item.sender_name }}</strong>
+        <p>{{ item.body }}</p>
+        <span class="muted">{{ item.created_at|date_only }}</span>
+      </div>
+    {% else %}
+      <p class="muted">Сообщений пока нет.</p>
+    {% endfor %}
+  </div>
+
+  <form method="post" class="form message-form">
+    <label>Получатель
+      <select name="receiver_id" required>
+        {% for user in participants %}
+          <option value="{{ user.id }}" {% if user.id == selected_participant_id %}selected{% endif %}>{{ user.full_name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Сообщение
+      <textarea name="body" required placeholder="Напишите сообщение"></textarea>
+    </label>
+    <button class="button">Отправить</button>
+  </form>
+</section>
+{% endblock %}

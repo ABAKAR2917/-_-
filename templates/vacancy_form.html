@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <h1>Новая вакансия</h1>
+  <form method="post" class="form grid-form">
+    <label>Должность
+      <input name="title" list="position-options" required placeholder="Выберите или введите должность">
+    </label>
+    <label>Город
+      <input name="city" list="city-options" required placeholder="Выберите или введите город">
+    </label>
+    <label>Место работы
+      <input name="workplace" list="workplace-options" required placeholder="Офис, удаленно, гибрид или свой вариант">
+    </label>
+    <label>Образование
+      <input name="education_required" list="education-options" required placeholder="Выберите или введите требование">
+    </label>
+    <label>Стаж, лет
+      <input name="experience_required" list="experience-options" type="number" step="0.1" min="0" value="0">
+    </label>
+    <label>Зарплата
+      <input name="salary" list="salary-options" type="number" min="0" value="0">
+    </label>
+    <label>Тип занятости
+      <input name="employment_type" list="employment-options" required placeholder="Выберите или введите тип занятости">
+    </label>
+    <label class="wide">Требуемые навыки
+      <input id="vacancy-skills-value" name="required_skills" type="hidden">
+      <input data-multi-picker data-target="vacancy-skills-value" list="skills-options" placeholder="Выберите навык или введите свой">
+      <div class="tag-list" data-tags-for="vacancy-skills-value"></div>
+    </label>
+    <label class="wide">Обязанности
+      <textarea name="duties" required placeholder="Опишите обязанности"></textarea>
+    </label>
+    <label class="wide">Условия труда
+      <textarea name="conditions" required placeholder="Опишите условия"></textarea>
+    </label>
+    <p class="form-hint wide">Если нужного значения нет в списке, введите свой вариант. Он сохранится в базе как обычное значение.</p>
+    <button class="button" type="submit">Опубликовать</button>
+  </form>
+</section>
+
+{% include "partials/form_datalists.html" %}
+{% endblock %}

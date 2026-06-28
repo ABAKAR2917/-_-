@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section-head">
+  <h1>Вакансии</h1>
+</div>
+
+<form method="get" class="filters advanced-filters">
+  <div class="filter-main">
+    <input name="query" list="position-options" placeholder="Профессия, должность, компания или навык" value="{{ filters.query }}">
+    <input name="city" list="city-options" placeholder="Город" value="{{ filters.city }}">
+    <button class="button">Найти</button>
+  </div>
+
+  <div class="filter-grid">
+    <input name="salary" type="number" min="0" placeholder="Зарплата от" value="{{ filters.salary }}">
+    <input name="salary_max" type="number" min="0" placeholder="Зарплата до" value="{{ filters.salary_max }}">
+    <input name="experience" list="experience-options" type="number" step="0.1" min="0" placeholder="Опыт до, лет" value="{{ filters.experience }}">
+    <input name="education" list="education-options" placeholder="Образование" value="{{ filters.education }}">
+    <input name="employment_type" list="employment-options" placeholder="Тип занятости" value="{{ filters.employment_type }}">
+    <input name="workplace" list="workplace-options" placeholder="Формат работы" value="{{ filters.workplace }}">
+    <select name="published">
+      <option value="">Любая дата</option>
+      <option value="today" {% if filters.published == 'today' %}selected{% endif %}>За сегодня</option>
+      <option value="3days" {% if filters.published == '3days' %}selected{% endif %}>За 3 дня</option>
+      <option value="week" {% if filters.published == 'week' %}selected{% endif %}>За неделю</option>
+      <option value="month" {% if filters.published == 'month' %}selected{% endif %}>За месяц</option>
+    </select>
+    <select name="sort">
+      <option value="new" {% if filters.sort == 'new' %}selected{% endif %}>Сначала новые</option>
+      <option value="relevance" {% if filters.sort == 'relevance' %}selected{% endif %}>По релевантности</option>
+      <option value="salary_desc" {% if filters.sort == 'salary_desc' %}selected{% endif %}>Сначала высокая зарплата</option>
+      <option value="salary_asc" {% if filters.sort == 'salary_asc' %}selected{% endif %}>Сначала низкая зарплата</option>
+    </select>
+  </div>
+
+  <div class="filter-checks">
+    <label><input type="checkbox" name="with_salary" value="1" {% if filters.with_salary %}checked{% endif %}> Только с зарплатой</label>
+    <label><input type="checkbox" name="verified" value="1" {% if filters.verified %}checked{% endif %}> Проверенные компании</label>
+    <a href="{{ url_for('vacancies') }}">Сбросить фильтры</a>
+  </div>
+</form>
+
+<div class="grid">
+  {% for vacancy in vacancies %}
+    <article class="card job-card">
+      <div class="company-bg">
+        {% if vacancy.company_logo %}
+          <img src="{{ url_for('uploaded_file', filename=vacancy.company_logo) }}" alt="{{ vacancy.company_name }}">
+        {% else %}
+          <span>{{ vacancy.company_name[:1] }}</span>
+        {% endif %}
+      </div>
+      <h3>{{ vacancy.title }}</h3>
+      <p>{{ vacancy.company_name }} · {{ vacancy.city }}</p>
+      <p class="muted">от {{ "%.0f"|format(vacancy.salary) }} ₽ · {{ vacancy.employment_type }} · {{ vacancy.workplace }}</p>
+      <a class="button small" href="{{ url_for('vacancy_detail', vacancy_id=vacancy.id) }}">Подробнее</a>
+    </article>
+  {% else %}
+    <p class="muted">По заданным фильтрам вакансий нет.</p>
+  {% endfor %}
+</div>
+
+{% include "partials/form_datalists.html" %}
+{% endblock %}

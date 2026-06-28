@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <p class="eyebrow">Рынок труда</p>
+  <h1>Статистика JobSearch</h1>
+  <p class="lead">Сводка по активным вакансиям, резюме, городам, сферам и зарплатным предложениям.</p>
+</section>
+
+<section class="stats-row">
+  <div class="stat"><strong>{{ vacancy_count }}</strong><span>активных вакансий</span></div>
+  <div class="stat"><strong>{{ resume_count }}</strong><span>активных резюме</span></div>
+  <div class="stat"><strong>{{ ratio }}</strong><span>резюме на вакансию</span></div>
+</section>
+
+<section class="two-col">
+  <div class="panel">
+    <h2>Зарплата по специальностям</h2>
+    <div class="bar-list">
+      {% for row in salary_by_specialty %}
+        <div class="bar-row">
+          <span>{{ row.label }}</span>
+          <strong>{{ "%.0f"|format(row.value or 0) }} ₽</strong>
+          <i style="width: {{ [100, ((row.value or 0) / 200000 * 100)]|min }}%"></i>
+        </div>
+      {% else %}
+        <p class="muted">Данных пока нет.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Вакансии по городам</h2>
+    <div class="bar-list">
+      {% for row in vacancies_by_city %}
+        <div class="bar-row">
+          <span>{{ row.label }}</span>
+          <strong>{{ row.value }}</strong>
+          <i style="width: {{ [100, row.value * 12]|min }}%"></i>
+        </div>
+      {% else %}
+        <p class="muted">Данных пока нет.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>Популярные сферы</h2>
+  <div class="bar-list">
+    {% for row in sectors %}
+      <div class="bar-row">
+        <span>{{ row.label }}</span>
+        <strong>{{ row.value }}</strong>
+        <i style="width: {{ [100, row.value * 12]|min }}%"></i>
+      </div>
+    {% else %}
+      <p class="muted">Данных пока нет.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="auth-shell">
+  <div class="auth-visual">
+    <p class="eyebrow">New account</p>
+    <h1>Регистрация участника платформы</h1>
+    <p>Создайте профиль соискателя или работодателя, чтобы пользоваться подбором вакансий, базой резюме и статусами откликов.</p>
+    <div class="auth-metric"><strong>30/90</strong><span>дней контроля актуальности вакансий и резюме</span></div>
+  </div>
+  <form method="post" class="auth-card form">
+    <h2>Регистрация</h2>
+    <label>ФИО<input name="full_name" required></label>
+    <label>Email<input name="email" type="email" required></label>
+    <label>Пароль<input name="password" type="password" required minlength="6"></label>
+    <label>Роль
+      <select name="role" required>
+        <option value="applicant">Соискатель</option>
+        <option value="employer">Работодатель</option>
+      </select>
+    </label>
+    <button class="button" type="submit">Создать аккаунт</button>
+  </form>
+</section>
+{% endblock %}

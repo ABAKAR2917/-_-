@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="section-head">
+  <h1>Кабинет соискателя</h1>
+  <div class="actions">
+    <a class="button" href="{{ url_for('resume') }}">Редактировать резюме</a>
+    <a class="button ghost" href="{{ url_for('recommendations') }}">Подобрать вакансии</a>
+    <a class="button ghost" href="{{ url_for('favorites') }}">Избранное</a>
+  </div>
+</div>
+
+<section class="panel">
+  <h2>Резюме</h2>
+  {% if resume %}
+    <p><strong>{{ resume.desired_position }}</strong>, {{ resume.city }}, опыт {{ resume.experience_years }} г.</p>
+    <p class="muted">Навыки: {{ resume.skills }} · обновлено {{ resume.updated_at|date_only }}</p>
+  {% else %}
+    <p class="muted">Резюме ещё не заполнено.</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Уведомления</h2>
+  <table>
+    <tr><th>Событие</th><th>Дата</th></tr>
+    {% for item in notifications %}
+      <tr>
+        <td>{{ item.title }}<br><span class="muted">{{ item.body }}</span></td>
+        <td>{{ item.created_at|date_only }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="2">Уведомлений пока нет.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+
+<section class="panel">
+  <h2>История откликов</h2>
+  <table>
+    <tr><th>Вакансия</th><th>Компания</th><th>Статус</th><th>История</th><th>Дата</th></tr>
+    {% for app in applications %}
+      <tr>
+        <td>{{ app.title }}</td>
+        <td>{{ app.company_name }}</td>
+        <td><span class="badge">{{ status_labels.get(app.status, app.status) }}</span></td>
+        <td><span class="muted">{{ app.status_history or "История пока не создана" }}</span></td>
+        <td>{{ app.updated_at|date_only }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">Откликов пока нет.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+{% endblock %}

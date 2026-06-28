@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="panel">
+  <div class="detail-heading">
+    <div class="company-avatar large">
+      {% if vacancy.company_logo %}
+        <img src="{{ url_for('uploaded_file', filename=vacancy.company_logo) }}" alt="{{ vacancy.company_name }}">
+      {% else %}
+        <span>{{ vacancy.company_name[:1] }}</span>
+      {% endif %}
+    </div>
+    <div>
+      <p class="eyebrow">{{ vacancy.company_name }} · {{ vacancy.city }}</p>
+      <h1>{{ vacancy.title }}</h1>
+      <p class="lead">Зарплата: {{ "%.0f"|format(vacancy.salary) }} ₽ · {{ vacancy.employment_type }}</p>
+      <div class="actions">
+        <a class="button ghost" href="{{ url_for('company_public', company_id=vacancy.company_id) }}">Профиль компании</a>
+        {% if current_user and current_user.role == 'applicant' %}
+          <form method="post" action="{{ url_for('toggle_favorite', item_type='vacancy', item_id=vacancy.id) }}">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button class="button ghost" type="submit">{{ "Убрать из избранного" if is_favorite else "В избранное" }}</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div>
+      <h2>Обязанности</h2>
+      <p>{{ vacancy.duties }}</p>
+      <h2>Условия</h2>
+      <p>{{ vacancy.conditions }}</p>
+    </div>
+    <div>
+      <h2>Требования</h2>
+      <p>Навыки: {{ vacancy.required_skills }}</p>
+      <p>Опыт: от {{ vacancy.experience_required }} лет</p>
+      <p>Формат работы: {{ vacancy.workplace }}</p>
+      <p class="muted">Подтверждена: {{ vacancy.last_confirmed_at|date_only }}</p>
+      {% if current_user and current_user.role == 'applicant' %}
+        {% if application %}
+          <p><span class="badge">Отклик: {{ status_labels.get(application.status, application.status) }}</span></p>
+          <a class="button ghost" href="{{ url_for('vacancy_messages', vacancy_id=vacancy.id) }}">Написать работодателю</a>
+        {% else %}
+          <form method="post" action="{{ url_for('apply', vacancy_id=vacancy.id) }}">
+            <button class="button">Откликнуться</button>
+          </form>
+        {% endif %}
+      {% endif %}
+      {% if current_user %}
+        <form method="post" action="{{ url_for('report_vacancy', vacancy_id=vacancy.id) }}" class="inline-form">
+          <input name="reason" placeholder="Причина жалобы">
+          <button class="button small ghost" type="submit">Пожаловаться</button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
