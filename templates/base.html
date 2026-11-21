@@ -18,6 +18,7 @@
       {% if current_user %}
         <a href="{{ url_for('favorites') }}">Избранное</a>
         <a href="{{ url_for('dashboard') }}">Кабинет</a>
+        <a href="{{ url_for('message_inbox') }}">Сообщения{% if unread_messages %} <span class="nav-count">{{ unread_messages }}</span>{% endif %}</a>
         <a href="{{ url_for('notifications') }}">Уведомления{% if unread_notifications %} <span class="nav-count">{{ unread_notifications }}</span>{% endif %}</a>
         {% if current_user.role == 'applicant' %}
           <a href="{{ url_for('recommendations') }}">Подбор</a>
@@ -33,6 +34,12 @@
   </header>
 
   <main class="container">
+    {% if request.endpoint != 'index' %}
+      <button type="button" class="page-back" data-back-button>
+        <span>←</span>
+        Назад
+      </button>
+    {% endif %}
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <div class="messages">

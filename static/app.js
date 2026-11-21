@@ -38,6 +38,36 @@ function addValue(hidden, value) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  const backButton = document.querySelector("[data-back-button]");
+  if (backButton) {
+    backButton.addEventListener("click", () => {
+      let canUseHistory = false;
+      try {
+        canUseHistory = document.referrer && new URL(document.referrer).origin === window.location.origin;
+      } catch {
+        canUseHistory = false;
+      }
+      if (canUseHistory && window.history.length > 1) {
+        window.history.back();
+      } else {
+        window.location.href = "/";
+      }
+    });
+  }
+
+  const roleSelect = document.querySelector('select[name="role"]');
+  const employerCodeRow = document.querySelector("[data-employer-code-row]");
+  if (roleSelect && employerCodeRow) {
+    const checkbox = employerCodeRow.querySelector('input[type="checkbox"]');
+    const syncEmployerCodeRow = () => {
+      const isEmployer = roleSelect.value === "employer";
+      employerCodeRow.hidden = !isEmployer;
+      if (!isEmployer && checkbox) checkbox.checked = false;
+    };
+    syncEmployerCodeRow();
+    roleSelect.addEventListener("change", syncEmployerCodeRow);
+  }
+
   document.querySelectorAll("[data-multi-picker]").forEach((input) => {
     const hidden = document.getElementById(input.dataset.target);
     if (!hidden) return;

@@ -10,6 +10,7 @@ CREATE TABLE users (
   email VARCHAR(180) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   role ENUM('applicant', 'employer', 'admin') NOT NULL,
+  email_login_code_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   created_at DATETIME NOT NULL
 );
 
@@ -196,4 +197,14 @@ CREATE TABLE messages (
   created_at DATETIME NOT NULL,
   INDEX idx_messages_receiver (receiver_id, is_read, created_at),
   INDEX idx_messages_vacancy (vacancy_id, created_at)
+);
+
+CREATE TABLE login_codes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  code_hash VARCHAR(255) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  used_at DATETIME,
+  created_at DATETIME NOT NULL,
+  INDEX idx_login_codes_user (user_id, expires_at, used_at)
 );

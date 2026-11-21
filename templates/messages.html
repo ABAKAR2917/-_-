@@ -1,48 +1,80 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="section-head">
-  <div>
-    <h1>Сообщения</h1>
-    <p class="lead">{{ vacancy.title }} · {{ vacancy.company_name }}</p>
-  </div>
-  <a class="button ghost" href="{{ url_for('vacancy_detail', vacancy_id=vacancy.id) }}">Открыть вакансию</a>
-</div>
+<section class="messenger-shell">
+  <aside class="messenger-sidebar">
+    <div class="messenger-sidebar-head">
+      <h1>Сообщения</h1>
+      <span>{{ conversations|length }}</span>
+    </div>
 
-<section class="panel">
-  {% if participants|length > 1 %}
-    <div class="chat-tabs">
-      {% for user in participants %}
-        <a class="chat-tab{% if user.id == selected_participant_id %} active{% endif %}" href="{{ url_for('vacancy_messages', vacancy_id=vacancy.id, participant=user.id) }}">
-          {{ user.full_name }}
+    <form class="messenger-search" method="get" action="{{ url_for('message_inbox') }}">
+      <input name="query" value="{{ query }}" placeholder="Поиск по имени, вакансии или компании">
+    </form>
+
+    <div class="conversation-list">
+      {% for item in conversations %}
+        <a class="conversation-item{% if selected_conversation and item.vacancy_id == selected_conversation.vacancy_id and item.participant_id == selected_conversation.participant_id %} active{% endif %}"
+           href="{{ url_for('message_inbox', vacancy=item.vacancy_id, participant=item.participant_id) }}">
+          <span class="conversation-avatar">{{ item.participant_name[:1] }}</span>
+          <span class="conversation-main">
+            <span class="conversation-top">
+              <strong>{{ item.participant_name }}</strong>
+              <small>{{ item.last_activity|date_only }}</small>
+            </span>
+            <span class="conversation-meta">{{ item.vacancy_title }}</span>
+            <span class="conversation-preview">{{ item.last_body }}</span>
+          </span>
+          {% if item.unread_count %}
+            <span class="conversation-unread">{{ item.unread_count }}</span>
+          {% endif %}
         </a>
+      {% else %}
+        <div class="messenger-empty compact">
+          <strong>Диалогов пока нет</strong>
+          <p>Сообщения появятся после отклика на вакансию.</p>
+        </div>
       {% endfor %}
     </div>
-  {% endif %}
+  </aside>
 
-  <div class="message-list">
-    {% for item in messages %}
-      <div class="message-item{% if item.sender_id == current_user.id %} own{% endif %}">
-        <strong>{{ item.sender_name }}</strong>
-        <p>{{ item.body }}</p>
-        <span class="muted">{{ item.created_at|date_only }}</span>
-      </div>
-    {% else %}
-      <p class="muted">Сообщений пока нет.</p>
-    {% endfor %}
-  </div>
+  <section class="messenger-chat">
+    {% if selected_conversation %}
+      <header class="messenger-chat-head">
+        <div class="conversation-avatar large">{{ selected_conversation.participant_name[:1] }}</div>
+        <div>
+          <h2>{{ selected_conversation.participant_name }}</h2>
+          <p>{{ selected_conversation.vacancy_title }} · {{ selected_conversation.company_name }}</p>
+        </div>
+        <a class="button small ghost" href="{{ url_for('vacancy_detail', vacancy_id=selected_conversation.vacancy_id) }}">Вакансия</a>
+      </header>
 
-  <form method="post" class="form message-form">
-    <label>Получатель
-      <select name="receiver_id" required>
-        {% for user in participants %}
-          <option value="{{ user.id }}" {% if user.id == selected_participant_id %}selected{% endif %}>{{ user.full_name }}</option>
+      <div class="message-thread">
+        {% for item in messages %}
+          <article class="message-bubble{% if item.sender_id == current_user.id %} own{% endif %}">
+            <span class="message-author">{{ "Вы" if item.sender_id == current_user.id else item.sender_name }}</span>
+            <p>{{ item.body }}</p>
+            <time>{{ item.created_at|date_only }} {{ item.created_at|time_short }}</time>
+          </article>
+        {% else %}
+          <div class="messenger-empty">
+            <strong>Начните диалог</strong>
+            <p>Напишите первое сообщение по этой вакансии.</p>
+          </div>
         {% endfor %}
-      </select>
-    </label>
-    <label>Сообщение
-      <textarea name="body" required placeholder="Напишите сообщение"></textarea>
-    </label>
-    <button class="button">Отправить</button>
-  </form>
+      </div>
+
+      <form method="post" action="{{ url_for('message_inbox') }}" class="message-composer">
+        <input type="hidden" name="vacancy_id" value="{{ selected_conversation.vacancy_id }}">
+        <input type="hidden" name="participant_id" value="{{ selected_conversation.participant_id }}">
+        <textarea name="body" required rows="2" placeholder="Напишите сообщение"></textarea>
+        <button class="button" type="submit">Отправить</button>
+      </form>
+    {% else %}
+      <div class="messenger-empty wide">
+        <strong>Выберите диалог</strong>
+        <p>Здесь будут отображаться сообщения между кандидатом и работодателем по конкретной вакансии.</p>
+      </div>
+    {% endif %}
+  </section>
 </section>
 {% endblock %}

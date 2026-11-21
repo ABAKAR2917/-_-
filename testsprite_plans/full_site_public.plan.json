@@ -1,0 +1,129 @@
+{
+  "projectId": "b641f761-e595-471a-a402-2e25e235965e",
+  "type": "frontend",
+  "name": "JobSearch public site navigation works across main pages",
+  "description": "A visitor can navigate through the main public JobSearch pages, use vacancy search filters, open vacancy and company details, and reach the authentication pages without server errors or broken layout.",
+  "priority": "p0",
+  "planSteps": [
+    {
+      "type": "action",
+      "description": "Navigate to the JobSearch homepage."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the homepage loads with a polished hero area, visible job search form, company showcase section, popular links section, new vacancies section, and footer."
+    },
+    {
+      "type": "action",
+      "description": "Enter a profession keyword and a city in the homepage search form."
+    },
+    {
+      "type": "action",
+      "description": "Submit the homepage search form."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the vacancies page opens and shows the advanced filter form above the vacancy result cards or a clear empty-results message."
+    },
+    {
+      "type": "action",
+      "description": "Change several vacancy filters such as salary, employment type, workplace format, and sorting."
+    },
+    {
+      "type": "action",
+      "description": "Submit the vacancy filters form."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the vacancies page remains stable after filtering, with no internal server error and with the filters still visible above the result area."
+    },
+    {
+      "type": "action",
+      "description": "Open the first available vacancy details page from the vacancy results."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the vacancy details page shows a job title, company context, city, salary or conditions, and an action area appropriate for a visitor."
+    },
+    {
+      "type": "action",
+      "description": "Use the visible back navigation control to return from the vacancy details page."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the browser returns to the vacancies page or another valid JobSearch page without an error page."
+    },
+    {
+      "type": "action",
+      "description": "Open the companies directory from the site navigation or homepage company section."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the companies page shows company cards with names, vacancy counts or a clear empty-state, and consistent card layout."
+    },
+    {
+      "type": "action",
+      "description": "Open the first available company profile from the companies list."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the company profile page shows the company name, logo or placeholder, industry, city, contacts, and company vacancies section."
+    },
+    {
+      "type": "action",
+      "description": "Open the employer information page from the public navigation or homepage employer call-to-action."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the employer page explains employer actions and provides a clear path to registration or vacancy publication without requiring a logged-in session."
+    },
+    {
+      "type": "action",
+      "description": "Open the login page."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the login page shows email and password fields, a submit button, and the normal site header/footer layout."
+    },
+    {
+      "type": "action",
+      "description": "Open the registration page."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the registration page shows full name, email, password, role selection, and that the employer email-code checkbox appears when employer role is selected."
+    },
+    {
+      "type": "action",
+      "description": "Open the career advice page through a site link."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the career advice page loads as a styled JobSearch page with readable content, no server error, and no broken top navigation."
+    },
+    {
+      "type": "action",
+      "description": "Open the market statistics page through a site link."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the market statistics page loads as a styled JobSearch page with readable content, no server error, and no broken top navigation."
+    },
+    {
+      "type": "action",
+      "description": "Open the security page through a site link."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the security page loads as a styled JobSearch page with readable content, no server error, and no broken top navigation."
+    },
+    {
+      "type": "action",
+      "description": "Scroll to the footer and inspect the contact and social link area."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the footer shows JobSearch branding, support contact, sections for applicants and employers, and social icons for Telegram, VK, and WhatsApp."
+    }
+  ]
+}

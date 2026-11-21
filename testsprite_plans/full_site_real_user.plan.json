@@ -1,0 +1,181 @@
+{
+  "projectId": "b641f761-e595-471a-a402-2e25e235965e",
+  "type": "frontend",
+  "name": "JobSearch real user journey creates accounts resume vacancy application and message",
+  "description": "A realistic applicant and employer can register with unique emails, complete their profiles, publish a vacancy, apply to it, and start a vacancy-based conversation without admin help or server errors.",
+  "priority": "p0",
+  "planSteps": [
+    {
+      "type": "action",
+      "description": "Choose a unique six-digit run suffix and remember it for every generated name, email, company, and vacancy in this test."
+    },
+    {
+      "type": "action",
+      "description": "Navigate to the JobSearch homepage."
+    },
+    {
+      "type": "action",
+      "description": "Open the registration page."
+    },
+    {
+      "type": "action",
+      "description": "Register a new applicant with full name TestSprite Applicant plus the run suffix, email testsprite.applicant plus the run suffix at example.com, password JobSearch12345, and applicant role."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the new applicant is redirected to the resume form after registration."
+    },
+    {
+      "type": "action",
+      "description": "Fill the applicant resume form with realistic values: city Orenburg, phone +79000000001, higher education, specialty Information systems, 3 years experience, desired position TestSprite QA Engineer plus the run suffix, desired salary 90000, skills Python SQL Flask, skill level 0.80, active search status, work experience, education history, languages, certificates, and portfolio links."
+    },
+    {
+      "type": "action",
+      "description": "Submit the applicant resume form."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the applicant dashboard opens and shows the saved resume with the desired position, city, skills, notification section, and application history section."
+    },
+    {
+      "type": "action",
+      "description": "Open the recommendations page from the applicant dashboard."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the recommendations page loads as a styled page with a vacancies table or a clear empty state."
+    },
+    {
+      "type": "action",
+      "description": "Log out from the applicant account."
+    },
+    {
+      "type": "action",
+      "description": "Open the registration page."
+    },
+    {
+      "type": "action",
+      "description": "Register a new employer with full name TestSprite Employer plus the run suffix, email testsprite.employer plus the run suffix at example.com, password JobSearch12345, employer role, and leave the email-code login checkbox disabled."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the new employer is redirected to the company profile form after registration."
+    },
+    {
+      "type": "action",
+      "description": "Fill the employer company form without uploading a logo, using company name TestSprite HR Lab plus the run suffix, a numeric INN, information technology industry, company size 11-50 employees, city Orenburg, contact email hr plus the run suffix at example.com, and a short company description."
+    },
+    {
+      "type": "action",
+      "description": "Submit the employer company form."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the employer dashboard opens and shows the saved company, employer statistics, vacancy section, candidates section, and responses section."
+    },
+    {
+      "type": "action",
+      "description": "Open the new vacancy form from the employer dashboard."
+    },
+    {
+      "type": "action",
+      "description": "Fill the vacancy form with title TestSprite QA Engineer plus the run suffix, city Orenburg, office workplace, higher education requirement, 1 year experience, salary 110000, full-time employment, required skills Python SQL Flask, realistic duties, and realistic working conditions."
+    },
+    {
+      "type": "action",
+      "description": "Submit the vacancy form."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the employer dashboard shows the newly published vacancy and does not require admin moderation before the vacancy exists."
+    },
+    {
+      "type": "action",
+      "description": "Log out from the employer account."
+    },
+    {
+      "type": "action",
+      "description": "Open the login page."
+    },
+    {
+      "type": "action",
+      "description": "Log in with the applicant email and password created earlier in this test."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the applicant dashboard opens without asking for an email code."
+    },
+    {
+      "type": "action",
+      "description": "Open the vacancies page."
+    },
+    {
+      "type": "action",
+      "description": "Search for the vacancy title TestSprite QA Engineer plus the run suffix."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the search results include the vacancy created by the employer in this test."
+    },
+    {
+      "type": "action",
+      "description": "Open the created vacancy details page from the search results."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the created vacancy details page shows the title, company name, city, salary, required skills, duties, and conditions."
+    },
+    {
+      "type": "action",
+      "description": "Apply to the created vacancy as the applicant."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the vacancy page or applicant dashboard indicates that the application was sent or already exists."
+    },
+    {
+      "type": "action",
+      "description": "Open the applicant messages page."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the messages page contains a conversation connected to the created vacancy or a clear dialog area for that vacancy."
+    },
+    {
+      "type": "action",
+      "description": "Log out from the applicant account."
+    },
+    {
+      "type": "action",
+      "description": "Open the login page."
+    },
+    {
+      "type": "action",
+      "description": "Log in with the employer email and password created earlier in this test."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the employer dashboard opens without asking for an email code and shows the applicant response to the created vacancy."
+    },
+    {
+      "type": "action",
+      "description": "Open the messages conversation with the applicant from the employer response or messages page."
+    },
+    {
+      "type": "action",
+      "description": "Send a short employer message inviting the applicant to discuss the created vacancy."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the sent message appears in the conversation thread and the conversation remains tied to the created vacancy."
+    },
+    {
+      "type": "action",
+      "description": "Open the notifications page."
+    },
+    {
+      "type": "assertion",
+      "description": "Verify the notifications page loads with a table or clear empty state and no internal server error."
+    }
+  ]
+}

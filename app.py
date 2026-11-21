@@ -1,6 +1,7 @@
 ﻿from __future__ import annotations
 
 import os
+import secrets
 import smtplib
 from datetime import UTC, datetime, timedelta
 from email.message import EmailMessage
@@ -61,6 +62,16 @@ def date_only(value) -> str:
     if isinstance(value, datetime):
         return value.strftime("%Y-%m-%d")
     return str(value)[:10]
+
+
+@app.template_filter("time_short")
+def time_short(value) -> str:
+    if not value:
+        return ""
+    if isinstance(value, datetime):
+        return value.strftime("%H:%M")
+    text = str(value)
+    return text[11:16] if len(text) >= 16 else text
 
 
 def db():
@@ -147,6 +158,45 @@ def send_email(to_email: str, subject: str, body: str) -> bool:
     except Exception as exc:
         app.logger.warning("Email notification was not sent: %s", exc)
         return False
+
+
+def email_code_required(user: dict) -> bool:
+    if user["role"] == "admin":
+        return True
+    if user["role"] == "employer":
+        return bool(user.get("email_login_code_enabled"))
+    return False
+
+
+def create_login_code(user: dict) -> str:
+    code = f"{secrets.randbelow(1_000_000):06d}"
+    now = datetime.now(UTC)
+    execute(
+        "UPDATE login_codes SET used_at=? WHERE user_id=? AND used_at IS NULL",
+        (mysql_datetime(now), user["id"]),
+    )
+    execute(
+        "INSERT INTO login_codes(user_id, code_hash, expires_at, created_at) VALUES(?,?,?,?)",
+        (
+            user["id"],
+            generate_password_hash(code),
+            mysql_datetime(now + timedelta(minutes=1)),
+            mysql_datetime(now),
+        ),
+    )
+    return code
+
+
+def send_login_code(user: dict, code: str) -> bool:
+    subject = "Код входа JobSearch"
+    body = (
+        f"Ваш код входа в JobSearch: {code}\n\n"
+        "Код действует 1 минуту. Если вы не входили в систему, проигнорируйте это письмо."
+    )
+    sent = send_email(user["email"], subject, body)
+    if not sent:
+        app.logger.warning("LOCAL LOGIN CODE for %s: %s", user["email"], code)
+    return sent
 
 
 def send_notification_email(user_id: int, title: str, body: str) -> None:
@@ -239,120 +289,138 @@ def compact_chat_notifications(user_id: int) -> None:
 
 def init_db() -> None:
     UPLOAD_DIR.mkdir(exist_ok=True)
+    if app.config.get("SCHEMA_EXTENSIONS_READY"):
+        return
     try:
         fetchone("SELECT id FROM users LIMIT 1")
     except Exception as exc:
         raise RuntimeError(
             "MySQL database is not ready. Import database_mysql.sql in phpMyAdmin first."
         ) from exc
-    if not app.config.get("SCHEMA_EXTENSIONS_READY"):
+    try:
+        execute("ALTER TABLE users ADD COLUMN email_login_code_enabled BOOLEAN NOT NULL DEFAULT FALSE")
+    except pymysql.err.OperationalError:
+        pass
+    try:
+        execute("ALTER TABLE companies ADD COLUMN description TEXT")
+    except pymysql.err.OperationalError:
+        pass
+    try:
+        execute("ALTER TABLE companies ADD COLUMN company_size VARCHAR(80)")
+    except pymysql.err.OperationalError:
+        pass
+    for column_sql in (
+        "ALTER TABLE resumes ADD COLUMN work_experience TEXT",
+        "ALTER TABLE resumes ADD COLUMN education_history TEXT",
+        "ALTER TABLE resumes ADD COLUMN languages TEXT",
+        "ALTER TABLE resumes ADD COLUMN certificates TEXT",
+        "ALTER TABLE resumes ADD COLUMN portfolio_links TEXT",
+        "ALTER TABLE resumes ADD COLUMN availability_status VARCHAR(120)",
+    ):
         try:
-            execute("ALTER TABLE companies ADD COLUMN description TEXT")
+            execute(column_sql)
         except pymysql.err.OperationalError:
             pass
-        try:
-            execute("ALTER TABLE companies ADD COLUMN company_size VARCHAR(80)")
-        except pymysql.err.OperationalError:
-            pass
-        for column_sql in (
-            "ALTER TABLE resumes ADD COLUMN work_experience TEXT",
-            "ALTER TABLE resumes ADD COLUMN education_history TEXT",
-            "ALTER TABLE resumes ADD COLUMN languages TEXT",
-            "ALTER TABLE resumes ADD COLUMN certificates TEXT",
-            "ALTER TABLE resumes ADD COLUMN portfolio_links TEXT",
-            "ALTER TABLE resumes ADD COLUMN availability_status VARCHAR(120)",
-        ):
-            try:
-                execute(column_sql)
-            except pymysql.err.OperationalError:
-                pass
-        execute(
-            """
-            CREATE TABLE IF NOT EXISTS favorites (
-              id INT AUTO_INCREMENT PRIMARY KEY,
-              user_id INT NOT NULL,
-              item_type ENUM('vacancy', 'resume') NOT NULL,
-              item_id INT NOT NULL,
-              created_at DATETIME NOT NULL,
-              UNIQUE KEY uq_favorite_once (user_id, item_type, item_id),
-              INDEX idx_favorites_user (user_id, item_type, created_at),
-              CONSTRAINT fk_favorites_user
-                FOREIGN KEY (user_id) REFERENCES users(id)
-                ON DELETE CASCADE
-            )
-            """
+    execute(
+        """
+        CREATE TABLE IF NOT EXISTS favorites (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          item_type ENUM('vacancy', 'resume') NOT NULL,
+          item_id INT NOT NULL,
+          created_at DATETIME NOT NULL,
+          UNIQUE KEY uq_favorite_once (user_id, item_type, item_id),
+          INDEX idx_favorites_user (user_id, item_type, created_at),
+          CONSTRAINT fk_favorites_user
+            FOREIGN KEY (user_id) REFERENCES users(id)
+            ON DELETE CASCADE
         )
-        execute(
-            """
-            CREATE TABLE IF NOT EXISTS application_history (
-              id INT AUTO_INCREMENT PRIMARY KEY,
-              application_id INT NOT NULL,
-              old_status VARCHAR(40),
-              new_status VARCHAR(40) NOT NULL,
-              comment VARCHAR(255),
-              created_at DATETIME NOT NULL,
-              CONSTRAINT fk_application_history_application
-                FOREIGN KEY (application_id) REFERENCES applications(id)
-                ON DELETE CASCADE,
-              INDEX idx_application_history (application_id, created_at)
-            )
-            """
+        """
+    )
+    execute(
+        """
+        CREATE TABLE IF NOT EXISTS application_history (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          application_id INT NOT NULL,
+          old_status VARCHAR(40),
+          new_status VARCHAR(40) NOT NULL,
+          comment VARCHAR(255),
+          created_at DATETIME NOT NULL,
+          CONSTRAINT fk_application_history_application
+            FOREIGN KEY (application_id) REFERENCES applications(id)
+            ON DELETE CASCADE,
+          INDEX idx_application_history (application_id, created_at)
         )
-        execute(
-            """
-            CREATE TABLE IF NOT EXISTS vacancy_views (
-              id INT AUTO_INCREMENT PRIMARY KEY,
-              vacancy_id INT NOT NULL,
-              viewer_id INT,
-              created_at DATETIME NOT NULL,
-              CONSTRAINT fk_vacancy_views_vacancy
-                FOREIGN KEY (vacancy_id) REFERENCES vacancies(id)
-                ON DELETE CASCADE,
-              INDEX idx_vacancy_views (vacancy_id, created_at)
-            )
-            """
+        """
+    )
+    execute(
+        """
+        CREATE TABLE IF NOT EXISTS vacancy_views (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          vacancy_id INT NOT NULL,
+          viewer_id INT,
+          created_at DATETIME NOT NULL,
+          CONSTRAINT fk_vacancy_views_vacancy
+            FOREIGN KEY (vacancy_id) REFERENCES vacancies(id)
+            ON DELETE CASCADE,
+          INDEX idx_vacancy_views (vacancy_id, created_at)
         )
-        execute(
-            """
-            CREATE TABLE IF NOT EXISTS employer_notes (
-              id INT AUTO_INCREMENT PRIMARY KEY,
-              employer_id INT NOT NULL,
-              resume_id INT NOT NULL,
-              note TEXT NOT NULL,
-              created_at DATETIME NOT NULL,
-              INDEX idx_employer_notes (employer_id, resume_id, created_at)
-            )
-            """
+        """
+    )
+    execute(
+        """
+        CREATE TABLE IF NOT EXISTS employer_notes (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          employer_id INT NOT NULL,
+          resume_id INT NOT NULL,
+          note TEXT NOT NULL,
+          created_at DATETIME NOT NULL,
+          INDEX idx_employer_notes (employer_id, resume_id, created_at)
         )
-        execute(
-            """
-            CREATE TABLE IF NOT EXISTS reports (
-              id INT AUTO_INCREMENT PRIMARY KEY,
-              reporter_id INT,
-              item_type ENUM('vacancy') NOT NULL,
-              item_id INT NOT NULL,
-              reason VARCHAR(255) NOT NULL,
-              created_at DATETIME NOT NULL,
-              INDEX idx_reports (item_type, item_id, created_at)
-            )
-            """
+        """
+    )
+    execute(
+        """
+        CREATE TABLE IF NOT EXISTS reports (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          reporter_id INT,
+          item_type ENUM('vacancy') NOT NULL,
+          item_id INT NOT NULL,
+          reason VARCHAR(255) NOT NULL,
+          created_at DATETIME NOT NULL,
+          INDEX idx_reports (item_type, item_id, created_at)
         )
-        execute(
-            """
-            CREATE TABLE IF NOT EXISTS messages (
-              id INT AUTO_INCREMENT PRIMARY KEY,
-              vacancy_id INT NOT NULL,
-              sender_id INT NOT NULL,
-              receiver_id INT NOT NULL,
-              body TEXT NOT NULL,
-              is_read BOOLEAN NOT NULL DEFAULT FALSE,
-              created_at DATETIME NOT NULL,
-              INDEX idx_messages_receiver (receiver_id, is_read, created_at),
-              INDEX idx_messages_vacancy (vacancy_id, created_at)
-            )
-            """
+        """
+    )
+    execute(
+        """
+        CREATE TABLE IF NOT EXISTS messages (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          vacancy_id INT NOT NULL,
+          sender_id INT NOT NULL,
+          receiver_id INT NOT NULL,
+          body TEXT NOT NULL,
+          is_read BOOLEAN NOT NULL DEFAULT FALSE,
+          created_at DATETIME NOT NULL,
+          INDEX idx_messages_receiver (receiver_id, is_read, created_at),
+          INDEX idx_messages_vacancy (vacancy_id, created_at)
         )
-        app.config["SCHEMA_EXTENSIONS_READY"] = True
+        """
+    )
+    execute(
+        """
+        CREATE TABLE IF NOT EXISTS login_codes (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          code_hash VARCHAR(255) NOT NULL,
+          expires_at DATETIME NOT NULL,
+          used_at DATETIME,
+          created_at DATETIME NOT NULL,
+          INDEX idx_login_codes_user (user_id, expires_at, used_at)
+        )
+        """
+    )
+    app.config["SCHEMA_EXTENSIONS_READY"] = True
 
 
 def current_user() -> dict | None:
@@ -409,16 +477,23 @@ def notify_matching_applicants(vacancy_id: int) -> None:
 def inject_globals() -> dict:
     user = current_user()
     unread_notifications = 0
+    unread_messages = 0
     if user:
         row = fetchone(
             "SELECT COUNT(*) AS count FROM notifications WHERE user_id=? AND is_read=0",
             (user["id"],),
         )
         unread_notifications = row["count"] if row else 0
+        row = fetchone(
+            "SELECT COUNT(*) AS count FROM messages WHERE receiver_id=? AND is_read=0",
+            (user["id"],),
+        )
+        unread_messages = row["count"] if row else 0
     return {
         "current_user": user,
         "role_names": role_names,
         "unread_notifications": unread_notifications,
+        "unread_messages": unread_messages,
         "status_labels": APPLICATION_STATUS_LABELS,
     }
 
@@ -492,6 +567,10 @@ def allowed_logo(filename: str) -> bool:
 
 def apply_automatic_deactivation() -> None:
     now = datetime.now(UTC)
+    last_run = app.config.get("AUTO_DEACTIVATION_LAST_RUN")
+    if last_run and (now - last_run).total_seconds() < 60:
+        return
+
     vacancy_limit = mysql_datetime(now - timedelta(days=30))
     resume_limit = mysql_datetime(now - timedelta(days=90))
     execute("UPDATE vacancies SET is_active=0 WHERE last_confirmed_at < ?", (vacancy_limit,))
@@ -511,6 +590,7 @@ def apply_automatic_deactivation() -> None:
     )
     for row in rows:
         execute("UPDATE vacancies SET needs_attention=1 WHERE id=?", (row["id"],))
+    app.config["AUTO_DEACTIVATION_LAST_RUN"] = now
 
 
 def resume_features(resume: dict, vacancy: dict) -> np.ndarray:
@@ -637,6 +717,8 @@ def ranked_vacancies_for(resume: dict) -> dict:
 
 @app.before_request
 def before_request() -> None:
+    if request.endpoint in {"static", "uploaded_file"}:
+        return
     init_db()
     apply_automatic_deactivation()
 
@@ -693,12 +775,16 @@ def register():
         email = request.form["email"].strip().lower()
         password = request.form["password"]
         role = request.form["role"]
+        email_login_code_enabled = role == "employer" and request.form.get("email_login_code_enabled") == "1"
         if role not in ("applicant", "employer"):
             abort(400)
         try:
             cur = execute(
-                "INSERT INTO users(full_name, email, password_hash, role, created_at) VALUES(?,?,?,?,?)",
-                (full_name, email, generate_password_hash(password), role, db_now()),
+                """
+                INSERT INTO users(full_name, email, password_hash, role, email_login_code_enabled, created_at)
+                VALUES(?,?,?,?,?,?)
+                """,
+                (full_name, email, generate_password_hash(password), role, email_login_code_enabled, db_now()),
             )
         except pymysql.err.IntegrityError:
             flash("Пользователь с таким email уже существует.", "danger")
@@ -717,12 +803,65 @@ def login():
     if request.method == "POST":
         user = fetchone("SELECT * FROM users WHERE email=?", (request.form["email"].strip().lower(),))
         if user and check_password_hash(user["password_hash"], request.form["password"]):
+            if email_code_required(user):
+                code = create_login_code(user)
+                send_login_code(user, code)
+                session.clear()
+                session["pending_login_user_id"] = user["id"]
+                session["pending_login_email"] = user["email"]
+                flash("Код входа отправлен на email. Код действует 1 минуту.", "info")
+                return redirect(url_for("login_code"))
             session.clear()
             session["user_id"] = user["id"]
             flash("Вход выполнен успешно.", "success")
             return redirect(url_for("dashboard"))
         flash("Неверный email или пароль.", "danger")
     return render_template("login.html")
+
+
+@app.route("/login/code", methods=["GET", "POST"])
+def login_code():
+    pending_user_id = session.get("pending_login_user_id")
+    if not pending_user_id:
+        return redirect(url_for("login"))
+    user = fetchone("SELECT * FROM users WHERE id=?", (pending_user_id,))
+    if not user:
+        session.clear()
+        return redirect(url_for("login"))
+    if request.method == "POST":
+        code = request.form.get("code", "").strip()
+        item = fetchone(
+            """
+            SELECT * FROM login_codes
+            WHERE user_id=? AND used_at IS NULL AND expires_at >= ?
+            ORDER BY created_at DESC
+            LIMIT 1
+            """,
+            (user["id"], db_now()),
+        )
+        if item and check_password_hash(item["code_hash"], code):
+            execute("UPDATE login_codes SET used_at=? WHERE id=?", (db_now(), item["id"]))
+            session.clear()
+            session["user_id"] = user["id"]
+            flash("Вход выполнен успешно.", "success")
+            return redirect(url_for("dashboard"))
+        flash("Неверный или просроченный код.", "danger")
+    return render_template("login_code.html", email=session.get("pending_login_email"))
+
+
+@app.route("/login/code/resend", methods=["POST"])
+def resend_login_code():
+    pending_user_id = session.get("pending_login_user_id")
+    if not pending_user_id:
+        return redirect(url_for("login"))
+    user = fetchone("SELECT * FROM users WHERE id=?", (pending_user_id,))
+    if not user:
+        session.clear()
+        return redirect(url_for("login"))
+    code = create_login_code(user)
+    send_login_code(user, code)
+    flash("Новый код отправлен. Код действует 1 минуту.", "info")
+    return redirect(url_for("login_code"))
 
 
 @app.route("/logout")
@@ -1289,85 +1428,166 @@ def report_vacancy(vacancy_id: int):
     return redirect(url_for("vacancy_detail", vacancy_id=vacancy_id))
 
 
-@app.route("/messages/vacancy/<int:vacancy_id>", methods=["GET", "POST"])
-@login_required()
-def vacancy_messages(vacancy_id: int):
-    user = current_user()
-    vacancy = fetchone(
-        """
-        SELECT v.*, c.owner_id AS employer_id, c.name AS company_name
-        FROM vacancies v
-        JOIN companies c ON c.id = v.company_id
-        WHERE v.id=?
-        """,
-        (vacancy_id,),
-    )
-    if not vacancy:
-        abort(404)
-    application = fetchone(
-        "SELECT * FROM applications WHERE vacancy_id=? AND applicant_id=?",
-        (vacancy_id, user["id"]),
-    )
-    is_employer = user["id"] == vacancy["employer_id"]
-    is_applicant = bool(application)
-    if not is_employer and not is_applicant:
-        abort(403)
-    participants = []
-    if is_employer:
-        participants = fetchall(
+def message_conversations(user: dict, search: str = "") -> list[dict]:
+    if user["role"] == "applicant":
+        rows = fetchall(
             """
             SELECT
-              u.id,
-              u.full_name,
-              MAX(COALESCE(m.created_at, a.created_at)) AS last_activity
+              v.id AS vacancy_id,
+              v.title AS vacancy_title,
+              v.city AS vacancy_city,
+              c.name AS company_name,
+              c.logo AS company_logo,
+              c.owner_id AS participant_id,
+              c.name AS participant_name,
+              'employer' AS participant_role,
+              a.status AS application_status,
+              a.created_at AS application_created_at,
+              a.updated_at AS application_updated_at,
+              (
+                SELECT m.body
+                FROM messages m
+                WHERE m.vacancy_id=v.id
+                  AND ((m.sender_id=? AND m.receiver_id=c.owner_id) OR (m.sender_id=c.owner_id AND m.receiver_id=?))
+                ORDER BY m.created_at DESC
+                LIMIT 1
+              ) AS last_body,
+              (
+                SELECT m.created_at
+                FROM messages m
+                WHERE m.vacancy_id=v.id
+                  AND ((m.sender_id=? AND m.receiver_id=c.owner_id) OR (m.sender_id=c.owner_id AND m.receiver_id=?))
+                ORDER BY m.created_at DESC
+                LIMIT 1
+              ) AS last_message_at,
+              (
+                SELECT COUNT(*)
+                FROM messages m
+                WHERE m.vacancy_id=v.id AND m.receiver_id=? AND m.sender_id=c.owner_id AND m.is_read=0
+              ) AS unread_count
             FROM applications a
-            JOIN users u ON u.id = a.applicant_id
-            LEFT JOIN messages m ON m.vacancy_id = a.vacancy_id
-              AND (
-                (m.sender_id = u.id AND m.receiver_id = ?)
-                OR (m.sender_id = ? AND m.receiver_id = u.id)
-              )
-            WHERE a.vacancy_id=?
-            GROUP BY u.id, u.full_name
-            ORDER BY last_activity DESC, u.full_name
+            JOIN vacancies v ON v.id = a.vacancy_id
+            JOIN companies c ON c.id = v.company_id
+            WHERE a.applicant_id=?
+            ORDER BY COALESCE(last_message_at, a.updated_at, a.created_at) DESC
             """,
-            (user["id"], user["id"], vacancy_id),
+            (user["id"], user["id"], user["id"], user["id"], user["id"], user["id"]),
         )
-        participant_ids = {item["id"] for item in participants}
-        selected_participant_id = request.args.get("participant", type=int)
-        if selected_participant_id not in participant_ids:
-            selected_participant_id = participants[0]["id"] if participants else None
+    elif user["role"] == "employer":
+        rows = fetchall(
+            """
+            SELECT
+              v.id AS vacancy_id,
+              v.title AS vacancy_title,
+              v.city AS vacancy_city,
+              c.name AS company_name,
+              c.logo AS company_logo,
+              u.id AS participant_id,
+              u.full_name AS participant_name,
+              'applicant' AS participant_role,
+              r.city AS applicant_city,
+              a.status AS application_status,
+              a.created_at AS application_created_at,
+              a.updated_at AS application_updated_at,
+              (
+                SELECT m.body
+                FROM messages m
+                WHERE m.vacancy_id=v.id
+                  AND ((m.sender_id=? AND m.receiver_id=u.id) OR (m.sender_id=u.id AND m.receiver_id=?))
+                ORDER BY m.created_at DESC
+                LIMIT 1
+              ) AS last_body,
+              (
+                SELECT m.created_at
+                FROM messages m
+                WHERE m.vacancy_id=v.id
+                  AND ((m.sender_id=? AND m.receiver_id=u.id) OR (m.sender_id=u.id AND m.receiver_id=?))
+                ORDER BY m.created_at DESC
+                LIMIT 1
+              ) AS last_message_at,
+              (
+                SELECT COUNT(*)
+                FROM messages m
+                WHERE m.vacancy_id=v.id AND m.receiver_id=? AND m.sender_id=u.id AND m.is_read=0
+              ) AS unread_count
+            FROM applications a
+            JOIN vacancies v ON v.id = a.vacancy_id
+            JOIN companies c ON c.id = v.company_id
+            JOIN users u ON u.id = a.applicant_id
+            LEFT JOIN resumes r ON r.user_id = u.id
+            WHERE c.owner_id=?
+            ORDER BY COALESCE(last_message_at, a.updated_at, a.created_at) DESC
+            """,
+            (user["id"], user["id"], user["id"], user["id"], user["id"], user["id"]),
+        )
     else:
-        selected_participant_id = vacancy["employer_id"]
-        participants = [{"id": vacancy["employer_id"], "full_name": vacancy["company_name"]}]
+        rows = []
+
+    for row in rows:
+        row["last_activity"] = row.get("last_message_at") or row.get("application_updated_at") or row.get("application_created_at")
+        row["last_body"] = row.get("last_body") or "Отклик по вакансии"
+        row["unread_count"] = int(row.get("unread_count") or 0)
+
+    query = search.strip().lower()
+    if query:
+        rows = [
+            row for row in rows
+            if query in " ".join(
+                str(row.get(key) or "").lower()
+                for key in ("participant_name", "vacancy_title", "company_name", "vacancy_city", "applicant_city")
+            )
+        ]
+    return rows
+
+
+def selected_message_conversation(conversations: list[dict], vacancy_id: int | None, participant_id: int | None) -> dict | None:
+    if vacancy_id and participant_id:
+        for row in conversations:
+            if int(row["vacancy_id"]) == vacancy_id and int(row["participant_id"]) == participant_id:
+                return row
+    if vacancy_id:
+        for row in conversations:
+            if int(row["vacancy_id"]) == vacancy_id:
+                return row
+    return conversations[0] if conversations else None
+
+
+def render_message_inbox(preselected_vacancy_id: int | None = None):
+    user = current_user()
+    query = request.args.get("query", "").strip()
+    conversations = message_conversations(user, query)
+    vacancy_id = request.values.get("vacancy_id", type=int) or request.values.get("vacancy", type=int) or preselected_vacancy_id
+    participant_id = request.values.get("participant_id", type=int) or request.values.get("participant", type=int)
+    selected = selected_message_conversation(conversations, vacancy_id, participant_id)
+
     if request.method == "POST":
         body = request.form.get("body", "").strip()
-        receiver_id = request.form.get("receiver_id", type=int) or 0
-        if is_applicant:
-            valid_receiver = receiver_id == vacancy["employer_id"]
-        else:
-            valid_receiver = bool(
-                fetchone(
-                    "SELECT id FROM applications WHERE vacancy_id=? AND applicant_id=?",
-                    (vacancy_id, receiver_id),
-                )
-            )
-        if body and valid_receiver:
+        if body and selected:
             execute(
                 "INSERT INTO messages(vacancy_id, sender_id, receiver_id, body, created_at) VALUES(?,?,?,?,?)",
-                (vacancy_id, user["id"], receiver_id, body, db_now()),
+                (selected["vacancy_id"], user["id"], selected["participant_id"], body, db_now()),
             )
-            notify_chat_message(receiver_id, vacancy, user["id"])
-            flash("Сообщение отправлено.", "success")
-            if is_employer:
-                return redirect(url_for("vacancy_messages", vacancy_id=vacancy_id, participant=receiver_id))
-        return redirect(url_for("vacancy_messages", vacancy_id=vacancy_id))
-    if selected_participant_id:
+            vacancy = fetchone(
+                """
+                SELECT v.*, c.name AS company_name
+                FROM vacancies v
+                JOIN companies c ON c.id = v.company_id
+                WHERE v.id=?
+                """,
+                (selected["vacancy_id"],),
+            )
+            if vacancy:
+                notify_chat_message(selected["participant_id"], vacancy, user["id"])
+        return redirect(url_for("message_inbox", vacancy=selected["vacancy_id"], participant=selected["participant_id"]) if selected else url_for("message_inbox"))
+
+    thread = []
+    if selected:
         execute(
             "UPDATE messages SET is_read=1 WHERE vacancy_id=? AND receiver_id=? AND sender_id=?",
-            (vacancy_id, user["id"], selected_participant_id),
+            (selected["vacancy_id"], user["id"], selected["participant_id"]),
         )
-        messages = fetchall(
+        selected["unread_count"] = 0
+        thread = fetchall(
             """
             SELECT m.*, sender.full_name AS sender_name, receiver.full_name AS receiver_name
             FROM messages m
@@ -1380,17 +1600,27 @@ def vacancy_messages(vacancy_id: int):
               )
             ORDER BY m.created_at
             """,
-            (vacancy_id, user["id"], selected_participant_id, selected_participant_id, user["id"]),
+            (selected["vacancy_id"], user["id"], selected["participant_id"], selected["participant_id"], user["id"]),
         )
-    else:
-        messages = []
     return render_template(
         "messages.html",
-        vacancy=vacancy,
-        participants=participants,
-        selected_participant_id=selected_participant_id,
-        messages=messages,
+        conversations=conversations,
+        selected_conversation=selected,
+        messages=thread,
+        query=query,
     )
+
+
+@app.route("/messages", methods=["GET", "POST"])
+@login_required()
+def message_inbox():
+    return render_message_inbox()
+
+
+@app.route("/messages/vacancy/<int:vacancy_id>", methods=["GET", "POST"])
+@login_required()
+def vacancy_messages(vacancy_id: int):
+    return render_message_inbox(vacancy_id)
 
 
 @app.route("/applications/<int:application_id>/status", methods=["POST"])

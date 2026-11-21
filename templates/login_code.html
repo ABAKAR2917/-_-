@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="auth-shell">
+  <div class="auth-visual">
+    <p class="eyebrow">Email code</p>
+    <h1>Подтверждение входа</h1>
+    <p>Введите код из письма. Код действует 1 минуту.</p>
+    <div class="auth-metric"><strong>6</strong><span>цифр для защиты входа в кабинет</span></div>
+  </div>
+  <form method="post" class="auth-card form">
+    <h2>Код входа</h2>
+    <p class="muted">Мы отправили код на {{ email }}.</p>
+    <label>Код
+      <input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" required autocomplete="one-time-code">
+    </label>
+    <button class="button" type="submit">Подтвердить</button>
+    <button class="link-button" type="submit" formaction="{{ url_for('resend_login_code') }}" formmethod="post" formnovalidate>Отправить код еще раз</button>
+  </form>
+</section>
+{% endblock %}
